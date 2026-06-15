@@ -128,6 +128,39 @@ MV dan steady-state asli (lihat §5). Jalankan: `python tuning_pid.py`.
 
 ---
 
+## 5c. Kenapa PID itu "salah" saat diuji, dan koreksinya — `simulasi_pid.py`
+
+Saat di-coba (Z-N **nyangkut**, Cohen-Coon **naik terus nggak ngaruh**), itu **gejala
+model salah**, bukan sekadar salah angka:
+
+1. **Model tak konsisten dengan kurva.** Pasangan (K=1.18, τ=250) memprediksi laju
+   `K·step/τ = 0.472 °C/s`, padahal laju nyata data hanya **0.248 °C/s** (meleset ~2×).
+2. **Prosesnya INTEGRATING, bukan FOPDT.** Kurva data = garis lurus → τ tak terdefinisi,
+   sehingga rumus Z-N/Cohen-Coon versi FOPDT memang **tidak tepat** dipakai.
+3. **Diuji di plant tak fisis.** Pada model integrator murni (tanpa rugi panas,
+   heater-only), begitu PV lewat 100 °C output=0 tapi heater **tak bisa mendinginkan**
+   → PV nyangkut di atas / divergen. Itulah "stuck" & "naik terus".
+
+**Koreksi (diverifikasi lewat simulasi loop tertutup):** model proses dibuat realistis
+(self-regulating, ada rugi panas, dikalibrasi agar laju awal = 0.248 °C/s; asumsi
+Tamb=30 °C, suhu maks pada 100% ≈ 200 °C, dead time 10 s), lalu PID diuji:
+
+| Tuning | PV akhir | Overshoot | Settling (±2%) |
+|--------|----------|-----------|-----------------|
+| Z-N kemarin (Kp 25.4) | 100 °C | 1.2% | ~306 s |
+| Cohen-Coon kemarin | 100 °C | 0.6% | ~306 s |
+| **PID KOREKSI: Kp=12, Ki=0.08, Kd=72** (Ti=150s, Td=6s) | **100 °C** | **0%** | ~339 s |
+
+PID koreksi: **overshoot 0%** di model realistis dan **paling kecil (1.2%)** bahkan di
+kasus terburuk (integrator murni). Grafiknya: `output/respons_pid.png`.
+
+> **Kesimpulan jujur:** angka PID yang benar-benar tepat **tidak bisa dipastikan** dari
+> data ini karena tak ada kolom MV & steady-state — semua nilai bergantung asumsi model.
+> Solusi sahih: (1) rekam **% output (MV)** + tunggu suhu **mendatar** lalu identifikasi
+> ulang, atau (2) pakai **Auto-Tuning (AT)** bawaan TCN4S. Jalankan: `python simulasi_pid.py`.
+
+---
+
 ## 6. Kaitan dengan mata kuliah Metode Numerik
 
 | Materi metode numerik | Penerapan di analisis ini |

@@ -97,6 +97,37 @@ untuk proses *integrating* — tinggal ganti variabel `dMV` dengan nilai output 
 
 ---
 
+## 5b. Mendapatkan Kp, Ki, Kd lewat ESTIMASI (cara reaction curve) — `tuning_pid.py`
+
+K **tidak bisa diukur** dari data ini, tetapi **bisa diestimasi** kalau kita berani
+mengambil **asumsi** besar step input/output. Inilah yang dipakai bila tetap ingin
+angka PID dari kurva reaksi (model FOPDT `G(s)=K·e^(−Ls)/(τs+1)`).
+
+**Parameter FOPDT hasil estimasi (asumsi step input = 100):**
+
+| Parameter | Nilai | Asal dari data |
+|-----------|-------|-----------------|
+| `K` (gain) | ≈ **1.18–1.19** | (PV_akhir − PV_awal)/100 = (158 − 40)/100 |
+| `τ` (time constant) | **250 s** | waktu PV mencapai setpoint 100 °C (interpolasi) |
+| `L` (dead time) | **10 s** | 1 interval sampling |
+
+**Rumus & hasil:**
+
+| Metode | Rumus Kp | Kp | Ki=Kp/Ti | Kd=Kp·Td |
+|--------|----------|----|----------|----------|
+| **Ziegler-Nichols** | `1.2·τ/(K·L)`, Ti=2L, Td=0.5L | ≈ **25.4** | ≈ **1.27** | ≈ **127** |
+| **Cohen-Coon** | `(1/K)(τ/L)(4/3+L/4τ)` | ≈ **28.5** | ≈ **1.18** | ≈ **103** |
+
+> Catatan akurasi: pakai `PV_awal = 40` → `K = 1.18` → Kp Z-N = 25.41 (sama persis
+> hasil umum di kelas). Pakai data mentah `PV_awal = 39` → `K = 1.19` → Kp = 25.21.
+> Selisihnya hanya pembulatan suhu awal; metodenya identik.
+
+**⚠️ Wajib ditulis di laporan:** nilai K ini **estimasi, bukan ukuran**. Sah hanya
+bila asumsi step input benar. Untuk PID yang benar-benar sahih, tetap perlu kolom
+MV dan steady-state asli (lihat §5). Jalankan: `python tuning_pid.py`.
+
+---
+
 ## 6. Kaitan dengan mata kuliah Metode Numerik
 
 | Materi metode numerik | Penerapan di analisis ini |

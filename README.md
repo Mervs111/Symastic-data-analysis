@@ -8,6 +8,7 @@ dengan materi mata kuliah **Metode Numerik**.
 | Berkas | Keterangan |
 |--------|-----------|
 | `analisis_tcn4s.py` | Script analisis (diferensiasi, regresi, interpolasi, integrasi numerik) |
+| `tuning_pid.py` | Estimasi Kp, Ki, Kd via Ziegler-Nichols & Cohen-Coon (model FOPDT) |
 | `data/data_suhu_tcn4s_14Juni2026.csv` | Data suhu TCN4S 14 Juni 2026 |
 | `LAPORAN_ANALISIS.md` | Laporan lengkap + diagnosis kendala "K tidak bisa dicari" |
 | `output/kurva_reaksi_tcn4s.png` | Grafik kurva reaksi & laju reaksi |

@@ -1,0 +1,112 @@
+# Laporan Analisis Data Suhu TCN4S — Pencarian Parameter PID
+
+**Sumber data:** `data/data_suhu_tcn4s_14Juni2026.csv` (TCN4S Autonics, 14 Juni 2026)
+**Script:** `analisis_tcn4s.py` · **Grafik:** `output/kurva_reaksi_tcn4s.png`
+
+---
+
+## 1. Ringkasan masalah (kendala)
+
+> "PID-nya mau dicari, tapi **K-nya nggak bisa dicari** dan **datanya nggak stabil**."
+
+Setelah dianalisis, **keluhan itu benar — dan itu BUKAN salah hitung, tapi keterbatasan data.**
+
+---
+
+## 2. Apa isi datanya
+
+| Kolom | Isi |
+|------|-----|
+| Waktu | 0 – 490 detik, interval 10 s (50 titik) |
+| PV (suhu aktual) | 39 °C → naik terus → **158 °C** |
+| SV (setpoint) | **100 °C konstan** |
+| Fase | keterangan teks (Naik Perlahan, Stabil, dll.) |
+
+**Yang TIDAK ada:** kolom **output kontroler / MV** (persen daya heater). Ini krusial (lihat §4).
+
+---
+
+## 3. Hasil analisis numerik
+
+| Besaran | Nilai | Cara (metode numerik) |
+|--------|-------|------------------------|
+| Laju reaksi rata-rata dPV/dt | **0.242 °C/s** (std 0.018) | Diferensiasi numerik (beda hingga pusat) |
+| Model garis | **PV = 0.248·t + 38.1**, **R² = 0.9998** | Regresi kuadrat terkecil |
+| Titik infleksi / slope maks | t=30 s, R=0.25 °C/s | argmax dari turunan |
+| PV memotong SP 100 °C | t ≈ **250 s** | Interpolasi linear |
+| Dead time L (ekstrapolasi) | ≈ 3.5 s | Interpolasi |
+| Jumlah osilasi | **0** (monoton naik) | Hitung pergantian tanda turunan |
+| IAE / ISE | 14945 / 606375 | Integrasi numerik (trapesium) |
+
+**Kesimpulan bentuk data:** R² ≈ 1 → kurvanya **garis lurus (RAMP)**, bukan kurva-S
+orde-satu. PV menembus SP dan terus naik (overshoot 58%, *runaway*), **tidak pernah
+mendatar di nilai akhir**. Tidak ada osilasi.
+
+---
+
+## 4. Kenapa "K" tidak bisa dicari
+
+`K` (gain proses statis) didefinisikan:
+
+```
+K = ΔPV (steady-state) / ΔMV (perubahan output kontroler)
+```
+
+Untuk menghitungnya **wajib** ada dua hal yang **tidak ada** di data ini:
+
+1. **Output / MV (% heater).** File hanya berisi PV dan SV. Penyebut `ΔMV` tidak diketahui.
+2. **Nilai akhir (steady-state).** PV berbentuk ramp linear yang tak pernah mendatar,
+   jadi `ΔPV steady-state` tidak terdefinisi.
+
+Karena itu **K memang tidak bisa dihitung** dari data ini — bukan karena rumus salah.
+
+Metode alternatif juga buntu dengan data ini:
+- **Ziegler-Nichols open-loop (kurva reaksi / FOPDT):** butuh plateau + ΔMV → tidak ada.
+- **Ziegler-Nichols closed-loop (Ultimate Gain Ku, Pu):** butuh **osilasi berkelanjutan**
+  → data 100% monoton, tidak ada osilasi.
+
+**Diagnosis akhir:** SV = 100 °C tapi PV cuek menembus ke 158 °C tanpa ada aksi koreksi.
+Artinya ini **respons open-loop / manual (loop kontrol tidak menutup)**, bukan respons
+PID tertutup. Maka "datanya nggak stabil" itu **wajar dan benar**.
+
+---
+
+## 5. Apa yang harus dilakukan (solusi)
+
+Supaya K (dan PID) bisa didapat, ambil ulang datanya dengan benar — pilih salah satu:
+
+**A. Metode kurva reaksi (open-loop) — paling cocok untuk tugas metode numerik**
+1. Set TCN4S ke **mode manual**, beri **step output tetap** (mis. dari 0% → 50%),
+   dan **catat nilai % output-nya** (tambahkan kolom MV).
+2. Tunggu sampai suhu **mendatar (steady-state)**.
+3. Dari kurva: `K = ΔPV/ΔMV`, `L` = dead time, `τ` = konstanta waktu.
+4. Z-N FOPDT (PID): `Kp = 1.2·τ/(K·L)`, `Ti = 2L`, `Td = 0.5L`.
+
+**B. Metode Ultimate Gain (closed-loop):** naikkan gain P sampai suhu **berosilasi tetap**,
+catat `Ku` dan periode `Pu`, lalu pakai tabel Z-N.
+
+**C. Praktis:** pakai fitur **Auto-Tuning (AT)** bawaan TCN4S — kontroler menghitung
+P, I, D otomatis.
+
+> Catatan istilah: TCN4S memakai **Proportional Band P (%)**, bukan gain langsung.
+> Hubungannya `Kp = 100 / P(%)`. Satuan I dan D dalam detik.
+
+Jika nanti sudah punya ΔMV, script `analisis_tcn4s.py` sudah menyiapkan rumus Z-N
+untuk proses *integrating* — tinggal ganti variabel `dMV` dengan nilai output sebenarnya
+(saat ini diasumsikan 100% hanya sebagai contoh).
+
+---
+
+## 6. Kaitan dengan mata kuliah Metode Numerik
+
+| Materi metode numerik | Penerapan di analisis ini |
+|-----------------------|----------------------------|
+| **Diferensiasi numerik** (beda hingga maju/pusat) | Hitung laju reaksi dPV/dt, cari titik infleksi |
+| **Regresi kuadrat terkecil** | Fit model PV = m·t + c, ukur R² → deteksi bentuk ramp |
+| **Interpolasi linear** | Cari waktu PV = SV dan estimasi dead time L |
+| **Integrasi numerik** (trapesium) | Hitung error integral IAE = ∫\|e\|dt, ISE = ∫e²dt |
+| **Pencocokan model / akar persamaan** | Estimasi parameter FOPDT (K, τ, L) saat data lengkap |
+
+Jadi pencarian PID dari kurva suhu adalah **kasus terapan langsung** dari metode numerik:
+turunan, regresi, interpolasi, dan integrasi numerik dipakai berurutan untuk
+mengekstrak parameter dinamika proses.

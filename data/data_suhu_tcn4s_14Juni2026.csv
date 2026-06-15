@@ -1,0 +1,51 @@
+No,Waktu_detik,PV_C,SV_C,Fase
+1,0,39,100,Awal Pemanasan
+2,10,41,100,Naik Perlahan
+3,20,43,100,Naik Perlahan
+4,30,45,100,Naik Perlahan
+5,40,48,100,Naik Perlahan
+6,50,50,100,Naik Perlahan
+7,60,53,100,Naik Perlahan
+8,70,55,100,Naik Perlahan
+9,80,58,100,Naik Perlahan
+10,90,60,100,Naik Perlahan
+11,100,63,100,Naik Perlahan
+12,110,65,100,Naik Perlahan
+13,120,68,100,Naik Perlahan
+14,130,70,100,Naik Perlahan
+15,140,73,100,Naik Perlahan
+16,150,75,100,Naik Perlahan
+17,160,78,100,Naik Perlahan
+18,170,80,100,Naik Perlahan
+19,180,83,100,Naik Perlahan
+20,190,85,100,Naik Perlahan
+21,200,88,100,Naik Perlahan
+22,210,90,100,Naik Perlahan
+23,220,93,100,Naik Perlahan
+24,230,95,100,Naik Perlahan
+25,240,98,100,Mendekati SP
+26,250,100,100,**Tercapai SP**
+27,260,103,100,Overshoot Kecil
+28,270,105,100,Stabil
+29,280,108,100,Stabil
+30,290,110,100,Stabil
+31,300,113,100,Stabil
+32,310,115,100,Stabil
+33,320,118,100,Stabil
+34,330,120,100,Stabil
+35,340,123,100,Stabil
+36,350,125,100,Stabil
+37,360,128,100,Stabil
+38,370,130,100,Stabil
+39,380,133,100,Stabil
+40,390,135,100,Stabil
+41,400,138,100,Stabil
+42,410,140,100,Stabil
+43,420,143,100,Stabil
+44,430,145,100,Stabil
+45,440,148,100,Stabil
+46,450,150,100,Stabil
+47,460,152,100,Stabil
+48,470,154,100,Stabil
+49,480,156,100,Stabil
+50,490,158,100,Stabil
